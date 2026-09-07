@@ -3,427 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Halimun Golf - Inventory System</title>
-    
+    <title>Halimun Golf Inventory</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Chart.js & DataLabels Plugin -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-
-    <!-- SheetJS (Excel Export) -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    
-    <!-- jsPDF & AutoTable (PDF Export) -->
+    <!-- SheetJS & jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
-    <!-- Firebase App & SDKs (Compat Version untuk stabilitas web publik) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        .smooth-transition { transition: all 0.3s ease-in-out; }
-        .hover-scale:hover { transform: scale(1.02); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .pulse-alert { animation: pulse-border 2s infinite; }
-        @keyframes pulse-border {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease; }
-        .accordion-content.open { max-height: 2000px; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .transition-smooth { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen flex flex-col">
-
-    <!-- Auth Screen -->
-    <div id="auth-screen" class="fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 transform transition-all">
+<body class="bg-slate-50 text-slate-800 antialiased">
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-900 to-slate-900">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 transition-smooth">
             <div class="text-center mb-6">
-                <!-- Halimun Golf Official Logo -->
-                <img src="https://raw.githubusercontent.com/chaerulmcp-ux/halimun-golf-inventory/main/Logo%20Flat%20Green_2.png" alt="Halimun Golf Logo" class="h-16 sm:h-20 mx-auto mb-3 object-contain rounded-xl shadow-md" onerror="this.src='https://placehold.co/150x60/10b981/ffffff?text=Halimun+Golf'">
-                <h1 class="text-xl font-bold text-slate-800">Halimun Golf Inventory</h1>
-                <p class="text-xs text-slate-500 mt-1">Silakan masukkan email pribadi & password untuk login / mendaftar.</p>
+                <h1 class="text-2xl font-bold text-slate-900">Halimun Golf Inventory</h1>
+                <p class="text-sm text-slate-500 mt-1">Silakan masuk atau daftar dengan email Anda.</p>
             </div>
-            
-            <form id="auth-form" class="space-y-4" onsubmit="event.preventDefault();">
+            <div id="auth-alert" class="hidden mb-4 p-3 rounded-lg text-sm"></div>
+            <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Email Pribadi</label>
-                    <input type="email" id="auth-email" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="email@example.com">
-                    <p class="text-[11px] text-slate-400 mt-1">* Catatan Master: email mengandung kata 'master' (cth: master@halimun.com)</p>
+                    <input type="email" id="auth-email" required placeholder="nama@email.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-600 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Password (Min. 6 karakter)</label>
-                    <input type="password" id="auth-password" required minlength="6" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="••••••••">
+                    <input type="password" id="auth-password" required placeholder="••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-600 focus:outline-none">
                 </div>
-                
-                <div id="auth-error" class="hidden bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200 text-center"></div>
-                <div id="auth-success" class="hidden bg-emerald-50 text-emerald-600 text-sm p-3 rounded-lg border border-emerald-200 text-center"></div>
-
                 <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="loginUser()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg shadow-md text-sm">Login</button>
-                    <button type="button" onclick="registerUser()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2.5 rounded-lg text-sm">Daftar</button>
+                    <button type="submit" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2.5 rounded-xl transition-smooth shadow-lg shadow-emerald-700/20">Login</button>
+                    <button type="button" onclick="handleRegister()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-xl transition-smooth">Daftar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Main App Screen -->
-    <div id="app-screen" class="hidden flex-col h-screen overflow-hidden bg-slate-50">
-        <nav class="bg-white border-b border-slate-200 shadow-sm z-20 flex-shrink-0">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16 items-center">
-                    <div class="flex items-center gap-3">
-                        <img src="https://raw.githubusercontent.com/chaerulmcp-ux/halimun-golf-inventory/main/Logo%20Flat%20Green_2.png" class="h-9 sm:h-10 object-contain rounded-lg shadow-sm">
-                        <span class="font-bold text-slate-800 text-sm sm:text-base hidden sm:inline">Halimun Golf</span>
-                    </div>
-                    <div class="flex items-center gap-2 sm:gap-4">
-                        <button onclick="openAiModal()" class="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium hover:bg-emerald-100 flex items-center gap-2 border border-emerald-200">
-                            <i class="fa-solid fa-robot"></i> <span class="hidden md:inline">AI Assistant</span>
-                        </button>
-                        <div class="text-right hidden sm:block">
-                            <div id="nav-user-email" class="text-xs sm:text-sm font-bold text-slate-800">user@email.com</div>
-                            <div id="nav-user-role" class="text-[10px] sm:text-xs text-emerald-600 uppercase tracking-wider font-bold">Role</div>
-                        </div>
-                        <button onclick="logoutUser()" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm" title="Logout">
-                            <i class="fa-solid fa-sign-out-alt"></i>
-                        </button>
-                    </div>
-                </div>
+    <!-- APP SCREEN -->
+    <div id="app-screen" class="hidden min-h-screen flex flex-col md:flex-row">
+        <div class="flex-1 p-6 lg:p-8 overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <span class="font-bold text-xl text-slate-800">Halimun Golf</span>
+                <button onclick="logout()" class="px-4 py-2 bg-red-50 text-red-600 rounded-xl font-medium text-sm hover:bg-red-100 transition-smooth">Keluar</button>
             </div>
-        </nav>
-
-        <div class="flex flex-1 overflow-hidden relative">
-            <aside class="w-full sm:w-64 bg-white shadow-xl flex-shrink-0 flex sm:flex-col justify-around sm:justify-start fixed sm:relative bottom-0 z-30 border-t sm:border-t-0 sm:border-r border-slate-200 py-1 sm:py-0">
-                <div class="sm:p-4 w-full flex sm:flex-col gap-1 sm:gap-2">
-                    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-btn flex-1 sm:flex-none flex flex-col sm:flex-row sm:justify-start items-center gap-1 sm:gap-3 p-2 sm:px-4 sm:py-3 rounded-xl text-emerald-700 bg-emerald-50 font-medium text-xs sm:text-sm">
-                        <i class="fa-solid fa-chart-pie text-base sm:text-lg"></i> <span>Dashboard</span>
-                    </button>
-                    <button onclick="switchTab('mutasi')" id="tab-mutasi" class="nav-btn flex-1 sm:flex-none flex flex-col sm:flex-row sm:justify-start items-center gap-1 sm:gap-3 p-2 sm:px-4 sm:py-3 rounded-xl text-slate-500 font-medium text-xs sm:text-sm">
-                        <i class="fa-solid fa-exchange-alt text-base sm:text-lg"></i> <span>Mutasi</span>
-                    </button>
-                    <button onclick="switchTab('barang')" id="tab-barang" class="nav-btn admin-only hidden flex-1 sm:flex-none flex flex-col sm:flex-row sm:justify-start items-center gap-1 sm:gap-3 p-2 sm:px-4 sm:py-3 rounded-xl text-slate-500 font-medium text-xs sm:text-sm">
-                        <i class="fa-solid fa-boxes-stacked text-base sm:text-lg"></i> <span>Barang</span>
-                    </button>
-                    <button onclick="switchTab('laporan')" id="tab-laporan" class="nav-btn flex-1 sm:flex-none flex flex-col sm:flex-row sm:justify-start items-center gap-1 sm:gap-3 p-2 sm:px-4 sm:py-3 rounded-xl text-slate-500 font-medium text-xs sm:text-sm">
-                        <i class="fa-solid fa-file-invoice text-base sm:text-lg"></i> <span>Laporan</span>
-                    </button>
-                    <button onclick="switchTab('users')" id="tab-users" class="nav-btn master-only hidden flex-1 sm:flex-none flex flex-col sm:flex-row sm:justify-start items-center gap-1 sm:gap-3 p-2 sm:px-4 sm:py-3 rounded-xl text-slate-500 font-medium text-xs sm:text-sm">
-                        <i class="fa-solid fa-users-gear text-base sm:text-lg"></i> <span>Users</span>
-                    </button>
-                </div>
-            </aside>
-
-            <main class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-6 relative bg-slate-50" id="main-content">
-                <!-- Low Stock Alert Banner -->
-                <div id="low-stock-banner" class="hidden mb-6 bg-red-50 border border-red-200 rounded-xl p-4 text-red-800 shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl animate-bounce"></i>
-                        <div>
-                            <h4 class="font-bold text-sm">Peringatan Stok Minimum!</h4>
-                            <p id="low-stock-text" class="text-xs mt-0.5">Beberapa barang berada di bawah batas minimum stock.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="global-date-filter" class="mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-end">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Dari Tanggal</label>
-                        <input type="date" id="filter-start" class="px-3 py-2 border rounded-lg text-sm outline-none focus:border-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Sampai Tanggal</label>
-                        <input type="date" id="filter-end" class="px-3 py-2 border rounded-lg text-sm outline-none focus:border-emerald-500">
-                    </div>
-                    <button onclick="applyDateFilter()" class="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-200">Terapkan Filter</button>
-                </div>
-
-                <!-- Dashboard View -->
-                <div id="view-dashboard" class="tab-view block space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-lg hover-scale">
-                            <div class="text-emerald-100 text-sm font-medium mb-1">Total Nilai Asset (Range)</div>
-                            <div class="text-3xl font-bold" id="dash-total-value">Rp 0</div>
-                            <div class="text-sm mt-2 opacity-80" id="dash-total-items">0 Total Barang</div>
-                        </div>
-                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover-scale flex flex-col justify-between">
-                            <div class="text-slate-500 text-sm font-medium mb-1"><i class="fa-solid fa-arrow-trend-up text-emerald-500 mr-2"></i>Paling Banyak Masuk</div>
-                            <div id="dash-trend-in" class="text-lg font-bold text-slate-800">-</div>
-                        </div>
-                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover-scale flex flex-col justify-between">
-                            <div class="text-slate-500 text-sm font-medium mb-1"><i class="fa-solid fa-arrow-trend-down text-red-500 mr-2"></i>Paling Banyak Keluar (Expenses)</div>
-                            <div id="dash-trend-out" class="text-lg font-bold text-slate-800">-</div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                            <button onclick="toggleAccordion('acc-food')" class="w-full p-5 flex items-center justify-between hover:bg-slate-50 focus:outline-none">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xl"><i class="fa-solid fa-utensils"></i></div>
-                                    <div class="text-left">
-                                        <h3 class="font-bold text-slate-800">Food</h3>
-                                        <p class="text-xs text-slate-500" id="dash-food-count">0 Items</p>
-                                    </div>
-                                </div>
-                                <i class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300" id="icon-acc-food"></i>
-                            </button>
-                            <div id="acc-food" class="accordion-content bg-slate-50 border-t border-slate-100 px-4">
-                                <div id="list-food" class="py-4 space-y-3"></div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                            <button onclick="toggleAccordion('acc-beverage')" class="w-full p-5 flex items-center justify-between hover:bg-slate-50 focus:outline-none">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl"><i class="fa-solid fa-wine-glass"></i></div>
-                                    <div class="text-left">
-                                        <h3 class="font-bold text-slate-800">Beverage</h3>
-                                        <p class="text-xs text-slate-500" id="dash-beverage-count">0 Items</p>
-                                    </div>
-                                </div>
-                                <i class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300" id="icon-acc-beverage"></i>
-                            </button>
-                            <div id="acc-beverage" class="accordion-content bg-slate-50 border-t border-slate-100 px-4">
-                                <div id="list-beverage" class="py-4 space-y-3"></div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                            <button onclick="toggleAccordion('acc-other')" class="w-full p-5 flex items-center justify-between hover:bg-slate-50 focus:outline-none">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl"><i class="fa-solid fa-box-open"></i></div>
-                                    <div class="text-left">
-                                        <h3 class="font-bold text-slate-800">Other</h3>
-                                        <p class="text-xs text-slate-500" id="dash-other-count">0 Items</p>
-                                    </div>
-                                </div>
-                                <i class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300" id="icon-acc-other"></i>
-                            </button>
-                            <div id="acc-other" class="accordion-content bg-slate-50 border-t border-slate-100 px-4">
-                                <div id="list-other" class="py-4 space-y-3"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2">
-                            <h3 class="font-bold text-slate-800 mb-4"><i class="fa-solid fa-chart-line text-emerald-500 mr-2"></i>Tren Stock Masuk & Keluar (Kurva Garis Harian)</h3>
-                            <div class="relative h-72 w-full"><canvas id="trendChart"></canvas></div>
-                        </div>
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                            <h3 class="font-bold text-slate-800 mb-4"><i class="fa-solid fa-chart-pie text-emerald-500 mr-2"></i>Total Actual Stock & Nilai</h3>
-                            <div class="relative h-64 w-full flex justify-center"><canvas id="stockPieChart"></canvas></div>
-                        </div>
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                            <h3 class="font-bold text-slate-800 mb-4"><i class="fa-solid fa-circle-minus text-red-500 mr-2"></i>Total Expenses (Barang Keluar)</h3>
-                            <div class="relative h-64 w-full flex justify-center"><canvas id="expensePieChart"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Mutasi View -->
-                <div id="view-mutasi" class="tab-view hidden space-y-6">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <h2 class="text-xl font-bold text-slate-800 mb-4">Catat Mutasi Stock</h2>
-                        <form id="form-mutasi" class="space-y-4 max-w-2xl" onsubmit="event.preventDefault();">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Kategori Barang</label>
-                                    <select id="mut-category" onchange="updateItemDropdown()" required class="w-full px-4 py-2 border rounded-lg outline-none">
-                                        <option value="">Pilih Kategori...</option>
-                                        <option value="Food">Food</option>
-                                        <option value="Beverage">Beverage</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Nama Barang</label>
-                                    <select id="mut-item" required class="w-full px-4 py-2 border rounded-lg outline-none disabled:bg-slate-100" disabled>
-                                        <option value="">Pilih Kategori Dahulu...</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Jenis Mutasi</label>
-                                    <select id="mut-type" required class="w-full px-4 py-2 border rounded-lg outline-none">
-                                        <option value="in">Masuk (In)</option>
-                                        <option value="out">Keluar (Out)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah</label>
-                                    <input type="number" id="mut-qty" required min="1" class="w-full px-4 py-2 border rounded-lg outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Tanggal</label>
-                                    <input type="date" id="mut-date" required class="w-full px-4 py-2 border rounded-lg outline-none">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Catatan</label>
-                                <textarea id="mut-note" rows="2" class="w-full px-4 py-2 border rounded-lg outline-none" placeholder="Keterangan mutasi..."></textarea>
-                            </div>
-                            <button type="button" onclick="saveMutasi()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg shadow font-medium">Simpan Mutasi</button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Barang View -->
-                <div id="view-barang" class="tab-view hidden space-y-6">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <h2 class="text-xl font-bold text-slate-800 mb-4">Tambah / Edit Barang</h2>
-                        <form id="form-barang" class="space-y-4 max-w-3xl" onsubmit="event.preventDefault();">
-                            <input type="hidden" id="item-id">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Nama Barang</label>
-                                    <input type="text" id="item-name" required class="w-full px-4 py-2 border rounded-lg outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
-                                    <select id="item-category" required class="w-full px-4 py-2 border rounded-lg outline-none">
-                                        <option value="Food">Food</option>
-                                        <option value="Beverage">Beverage</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Harga Satuan (Rp)</label>
-                                    <input type="number" id="item-price" required min="0" class="w-full px-4 py-2 border rounded-lg outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Minimum Stock (Partstock)</label>
-                                    <input type="number" id="item-min" required min="0" class="w-full px-4 py-2 border rounded-lg outline-none">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">URL Gambar Barang</label>
-                                <input type="url" id="item-image-url" placeholder="https://..." class="w-full px-4 py-2 border rounded-lg outline-none">
-                            </div>
-                            <div class="flex gap-2">
-                                <button type="button" onclick="saveItem()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg shadow font-medium">Simpan Barang</button>
-                                <button type="button" onclick="resetItemForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-2 rounded-lg shadow font-medium">Batal / Baru</button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-                                        <th class="px-4 py-3 font-medium">Pic</th>
-                                        <th class="px-4 py-3 font-medium">Nama Barang</th>
-                                        <th class="px-4 py-3 font-medium">Kategori</th>
-                                        <th class="px-4 py-3 font-medium">Harga</th>
-                                        <th class="px-4 py-3 font-medium">Min Stock</th>
-                                        <th class="px-4 py-3 font-medium">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-items" class="divide-y divide-slate-100 text-sm"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Laporan View -->
-                <div id="view-laporan" class="tab-view hidden space-y-6">
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap justify-between items-center gap-4">
-                        <h2 class="text-xl font-bold text-slate-800">Rekap Data Mutasi</h2>
-                        <div class="flex gap-2">
-                            <button onclick="exportExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow text-sm font-medium"><i class="fa-solid fa-file-excel mr-2"></i>Export Excel</button>
-                            <button onclick="exportPDF()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow text-sm font-medium"><i class="fa-solid fa-file-pdf mr-2"></i>Export PDF</button>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse" id="report-table">
-                                <thead>
-                                    <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-                                        <th class="px-4 py-3 font-medium">Tanggal</th>
-                                        <th class="px-4 py-3 font-medium">Kategori</th>
-                                        <th class="px-4 py-3 font-medium">Barang</th>
-                                        <th class="px-4 py-3 font-medium">Jenis</th>
-                                        <th class="px-4 py-3 font-medium">Qty</th>
-                                        <th class="px-4 py-3 font-medium">Catatan</th>
-                                        <th class="px-4 py-3 font-medium">User</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-reports" class="divide-y divide-slate-100 text-sm"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Users View -->
-                <div id="view-users" class="tab-view hidden space-y-6">
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="p-5 border-b border-slate-200">
-                            <h2 class="text-xl font-bold text-slate-800">Manajemen Pengguna</h2>
-                            <p class="text-xs text-slate-500 mt-1">Setujui user baru atau kelola hak akses.</p>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-                                        <th class="px-4 py-3 font-medium">Email</th>
-                                        <th class="px-4 py-3 font-medium">Role</th>
-                                        <th class="px-4 py-3 font-medium">Status</th>
-                                        <th class="px-4 py-3 font-medium">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-users" class="divide-y divide-slate-100 text-sm"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
-
-    <!-- AI Assistant Modal -->
-    <div id="ai-modal" class="fixed inset-0 bg-slate-900 bg-opacity-50 flex items-center justify-center z-50 hidden backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 flex flex-col h-[500px]">
-            <div class="flex justify-between items-center border-b pb-3 mb-4">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-robot"></i></div>
-                    <h3 class="font-bold text-slate-800 text-sm sm:text-base">Halimun Golf AI Assistant</h3>
-                </div>
-                <button onclick="closeAiModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div id="ai-chat-container" class="flex-1 overflow-y-auto space-y-3 p-2 bg-slate-50 rounded-xl border border-slate-100 mb-4 text-sm">
-                <div class="bg-emerald-50 text-emerald-800 p-3 rounded-xl border border-emerald-100">Halo! Tanyakan apa saja tentang stok barang Halimun Golf.</div>
-            </div>
-            <div class="flex gap-2">
-                <input type="text" id="ai-input" placeholder="Tanya AI..." class="flex-1 px-4 py-2 border rounded-xl outline-none text-sm" onkeypress="if(event.key === 'Enter') sendAiQuery()">
-                <button onclick="sendAiQuery()" class="bg-emerald-600 text-white px-5 py-2 rounded-xl text-sm"><i class="fa-solid fa-paper-plane"></i></button>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <h2 class="text-xl font-bold mb-4">Dashboard Stok Inventaris</h2>
+                <p id="user-info" class="text-slate-600 mb-4"></p>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-20 sm:bottom-6 right-6 bg-slate-800 text-white px-6 py-3 rounded-xl shadow-2xl transform translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
-        <i id="toast-icon" class="fa-solid fa-bell text-emerald-400"></i>
-        <span id="toast-msg" class="text-sm font-medium">Notification</span>
-    </div>
+    <!-- FIREBASE MODULE SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    <script>
-        // Konfigurasi Firebase Anda yang asli
         const firebaseConfig = {
             apiKey: "AIzaSyCYaufdxJ13jHRMdPpwcX0wAZNzbb1_WME",
             authDomain: "halimun-golf.firebaseapp.com",
@@ -434,527 +76,57 @@
             measurementId: "G-74Z3V0P3CP"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        window.appState = { user: null, items: [], mutations: [], allUsers: [], dateStart: '', dateEnd: '', charts: { trend: null, pieStock: null, pieExp: null } };
-        const el = (id) => document.getElementById(id);
+        function showAlert(msg, isError = true) {
+            const el = document.getElementById('auth-alert');
+            el.className = `mb-4 p-3 rounded-lg text-sm ${isError ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`;
+            el.innerText = msg;
+            el.classList.remove('hidden');
+        }
 
-        const today = new Date();
-        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-        const formatDate = (date) => {
-            const d = new Date(date);
-            let month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
-            if (month.length < 2) month = '0' + month;
-            if (day.length < 2) day = '0' + day;
-            return [year, month, day].join('-');
+        window.handleAuth = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (err) {
+                showAlert("Login Gagal: " + err.message);
+            }
         };
 
-        el('filter-start').value = formatDate(firstDay);
-        el('filter-end').value = formatDate(today);
-        window.appState.dateStart = formatDate(firstDay);
-        window.appState.dateEnd = formatDate(today);
-        Chart.register(ChartDataLabels);
+        window.handleRegister = async function() {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-password').value;
+            if(!email || !pass) {
+                showAlert("Email dan password wajib diisi!");
+                return;
+            }
+            try {
+                await createUserWithEmailAndPassword(auth, email, pass);
+                showAlert("Pendaftaran berhasil! Silakan klik Login.", false);
+            } catch (err) {
+                showAlert("Pendaftaran Gagal: " + err.message);
+            }
+        };
 
-        // Auth State Listener
-        auth.onAuthStateChanged(async (firebaseUser) => {
-            if (firebaseUser) {
-                const email = firebaseUser.email.toLowerCase();
-                const userDocRef = db.collection('users').doc(email);
-                const docSnap = await userDocRef.get();
-                if (docSnap.exists) {
-                    window.appState.user = docSnap.data();
-                    startApp();
-                } else {
-                    let role = email.includes('master') ? 'master' : 'staff';
-                    let status = email.includes('master') ? 'approved' : 'pending';
-                    const userData = { email, role, status, createdAt: new Date().toISOString() };
-                    await userDocRef.set(userData);
-                    window.appState.user = userData;
-                    if (status === 'approved') startApp();
-                    else {
-                        auth.signOut();
-                        showAuthError("Akun terdaftar, menunggu persetujuan Master Admin.");
-                    }
-                }
+        window.logout = async function() {
+            await signOut(auth);
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                document.getElementById('user-info').innerText = `Masuk sebagai: ${user.email}`;
             } else {
-                el('app-screen').classList.add('hidden');
-                el('auth-screen').classList.remove('hidden');
-                el('auth-screen').classList.add('flex');
+                document.getElementById('app-screen').classList.add('hidden');
+                document.getElementById('auth-screen').classList.remove('hidden');
             }
         });
-
-        window.loginUser = async () => {
-            const email = el('auth-email').value.trim().toLowerCase();
-            const password = el('auth-password').value;
-            if (!email || !password) return showAuthError("Isi email dan password");
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-            } catch (err) {
-                showAuthError("Login Gagal: " + err.message);
-            }
-        };
-
-        window.registerUser = async () => {
-            const email = el('auth-email').value.trim().toLowerCase();
-            const password = el('auth-password').value;
-            if (!email || !password) return showAuthError("Isi email dan password");
-            try {
-                await auth.createUserWithEmailAndPassword(email, password);
-                const role = email.includes('master') ? 'master' : 'staff';
-                const status = email.includes('master') ? 'approved' : 'pending';
-                await db.collection('users').doc(email).set({
-                    email, role, status, createdAt: new Date().toISOString()
-                });
-                if (status === 'approved') {
-                    showAuthSuccess("Berhasil mendaftar sebagai Master!");
-                } else {
-                    await auth.signOut();
-                    showAuthSuccess("Pendaftaran berhasil! Menunggu persetujuan Master Admin.");
-                }
-            } catch (err) {
-                showAuthError("Pendaftaran Gagal: " + err.message);
-            }
-        };
-
-        window.logoutUser = () => {
-            auth.signOut();
-        };
-
-        function showAuthError(msg) {
-            el('auth-success').classList.add('hidden');
-            el('auth-error').textContent = msg;
-            el('auth-error').classList.remove('hidden');
-        }
-        function showAuthSuccess(msg) {
-            el('auth-error').classList.add('hidden');
-            el('auth-success').textContent = msg;
-            el('auth-success').classList.remove('hidden');
-        }
-
-        function startApp() {
-            el('auth-screen').classList.add('hidden');
-            el('auth-screen').classList.remove('flex');
-            el('app-screen').classList.remove('hidden');
-            el('app-screen').classList.add('flex');
-
-            const u = window.appState.user;
-            el('nav-user-email').textContent = u.email;
-            el('nav-user-role').textContent = u.role.toUpperCase();
-
-            document.querySelectorAll('.admin-only').forEach(e => e.classList.add('hidden'));
-            document.querySelectorAll('.master-only').forEach(e => e.classList.add('hidden'));
-            if (u.role === 'master' || u.role === 'admin') document.querySelectorAll('.admin-only').forEach(e => e.classList.remove('hidden'));
-            if (u.role === 'master') {
-                document.querySelectorAll('.master-only').forEach(e => e.classList.remove('hidden'));
-                checkAndSeedData();
-            }
-
-            el('mut-date').value = formatDate(new Date());
-            listenToItems();
-            listenToMutations();
-            if (u.role === 'master') listenToUsers();
-            switchTab('dashboard');
-        }
-
-        async function checkAndSeedData() {
-            try {
-                const itemsSnap = await db.collection('items').get();
-                if (itemsSnap.empty) {
-                    const dummyItems = [
-                        { name: "Nasi Goreng Halimun", category: "Food", price: 45000, minStock: 20, imageUrl: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?q=80&w=200&auto=format&fit=crop" },
-                        { name: "Sop Buntut", category: "Food", price: 85000, minStock: 15, imageUrl: "https://images.unsplash.com/photo-1543353071-10c8ba85a904?q=80&w=200&auto=format&fit=crop" },
-                        { name: "Iced Tea", category: "Beverage", price: 15000, minStock: 50, imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=200&auto=format&fit=crop" },
-                        { name: "Golf Ball Titleist", category: "Other", price: 750000, minStock: 10, imageUrl: "https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?q=80&w=200&auto=format&fit=crop" }
-                    ];
-                    const todayStr = formatDate(new Date());
-                    for (const item of dummyItems) {
-                        const ref = await db.collection('items').add(item);
-                        await db.collection('mutations').add({
-                            itemId: ref.id, type: 'in', qty: item.minStock + 20, date: todayStr, note: 'Initial Stock', userId: 'system'
-                        });
-                    }
-                }
-            } catch(e){ console.error(e); }
-        }
-
-        function listenToItems() {
-            db.collection('items').onSnapshot((snap) => {
-                window.appState.items = [];
-                snap.forEach(d => window.appState.items.push({ id: d.id, ...d.data() }));
-                renderMasterBarang();
-                updateItemDropdown();
-                processDashboardData();
-            });
-        }
-
-        function listenToMutations() {
-            db.collection('mutations').onSnapshot((snap) => {
-                window.appState.mutations = [];
-                snap.forEach(d => window.appState.mutations.push({ id: d.id, ...d.data() }));
-                processDashboardData();
-                renderReports();
-                checkLowStockAlerts();
-            });
-        }
-
-        function listenToUsers() {
-            db.collection('users').onSnapshot((snap) => {
-                window.appState.allUsers = [];
-                snap.forEach(d => window.appState.allUsers.push({ id: d.id, ...d.data() }));
-                renderUsers();
-            });
-        }
-
-        window.switchTab = (tab) => {
-            document.querySelectorAll('.tab-view').forEach(v => v.classList.add('hidden'));
-            document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-emerald-50', 'text-emerald-700'); b.classList.add('text-slate-500'); });
-            el('view-' + tab).classList.remove('hidden');
-            const activeBtn = el('tab-' + tab);
-            if(activeBtn) { activeBtn.classList.remove('text-slate-500'); activeBtn.classList.add('bg-emerald-50', 'text-emerald-700'); }
-            if(tab === 'dashboard' || tab === 'laporan') el('global-date-filter').classList.remove('hidden');
-            else el('global-date-filter').classList.add('hidden');
-        };
-
-        window.applyDateFilter = () => {
-            window.appState.dateStart = el('filter-start').value;
-            window.appState.dateEnd = el('filter-end').value;
-            processDashboardData();
-            renderReports();
-            showToast("Filter Tanggal Diterapkan", "fa-check-circle");
-        };
-
-        window.showToast = (msg, icon = 'fa-bell', isError = false) => {
-            const t = el('toast');
-            el('toast-msg').textContent = msg;
-            el('toast-icon').className = `fa-solid ${icon} ${isError ? 'text-red-400' : 'text-emerald-400'}`;
-            t.classList.remove('translate-y-24', 'opacity-0');
-            setTimeout(() => t.classList.add('translate-y-24', 'opacity-0'), 3000);
-        };
-
-        const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num || 0);
-
-        window.saveItem = async () => {
-            const id = el('item-id').value;
-            const name = el('item-name').value;
-            const category = el('item-category').value;
-            const price = parseInt(el('item-price').value);
-            const minStock = parseInt(el('item-min').value);
-            const imageUrl = el('item-image-url').value;
-            if(!name || isNaN(price) || isNaN(minStock)) return showToast("Lengkapi form", "fa-warning", true);
-            const itemData = { name, category, price, minStock, imageUrl };
-            if(id) await db.collection('items').doc(id).update(itemData);
-            else await db.collection('items').add(itemData);
-            showToast("Barang disimpan");
-            resetItemForm();
-        };
-
-        window.resetItemForm = () => {
-            el('item-id').value = ''; el('item-name').value = ''; el('item-price').value = ''; el('item-min').value = ''; el('item-image-url').value = '';
-        };
-
-        window.editItem = (id) => {
-            const item = window.appState.items.find(i => i.id === id);
-            if(!item) return;
-            el('item-id').value = item.id; el('item-name').value = item.name; el('item-category').value = item.category;
-            el('item-price').value = item.price; el('item-min').value = item.minStock; el('item-image-url').value = item.imageUrl || '';
-        };
-
-        window.deleteItem = async (id) => {
-            if(!confirm("Hapus barang?")) return;
-            await db.collection('items').doc(id).delete();
-            showToast("Barang dihapus");
-        };
-
-        function renderMasterBarang() {
-            const tbody = el('table-items'); tbody.innerHTML = '';
-            window.appState.items.forEach(item => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-4 py-3"><img src="${item.imageUrl || 'https://placehold.co/100x100/e2e8f0/64748b?text=Img'}" class="w-10 h-10 rounded object-cover border"></td>
-                        <td class="px-4 py-3 font-medium">${item.name}</td>
-                        <td class="px-4 py-3"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs">${item.category}</span></td>
-                        <td class="px-4 py-3">${formatRp(item.price)}</td>
-                        <td class="px-4 py-3">${item.minStock}</td>
-                        <td class="px-4 py-3">
-                            <button onclick="editItem('${item.id}')" class="text-blue-500 mr-2"><i class="fa-solid fa-edit"></i></button>
-                            <button onclick="deleteItem('${item.id}')" class="text-red-500"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>`;
-            });
-        }
-
-        window.updateItemDropdown = () => {
-            const cat = el('mut-category').value;
-            const select = el('mut-item');
-            select.innerHTML = '<option value="">Pilih Barang...</option>';
-            if(cat) {
-                select.disabled = false;
-                window.appState.items.filter(i => i.category === cat).forEach(item => {
-                    select.innerHTML += `<option value="${item.id}">${item.name}</option>`;
-                });
-            } else { select.disabled = true; }
-        };
-
-        window.saveMutasi = async () => {
-            const itemId = el('mut-item').value;
-            const type = el('mut-type').value;
-            const qty = parseInt(el('mut-qty').value);
-            const date = el('mut-date').value;
-            const note = el('mut-note').value;
-            if(!itemId || isNaN(qty) || !date) return showToast("Lengkapi form mutasi", "fa-warning", true);
-            await db.collection('mutations').add({
-                itemId, type, qty, date, note, timestamp: Date.now(), userId: window.appState.user.email
-            });
-            showToast("Mutasi disimpan");
-            el('form-mutasi').reset();
-            el('mut-date').value = formatDate(new Date());
-            updateItemDropdown();
-        };
-
-        function calculateCurrentStocks() {
-            let stockMap = {};
-            window.appState.items.forEach(i => stockMap[i.id] = 0);
-            window.appState.mutations.forEach(m => {
-                if(stockMap[m.itemId] !== undefined) {
-                    if(m.type === 'in') stockMap[m.itemId] += m.qty;
-                    else if(m.type === 'out') stockMap[m.itemId] -= m.qty;
-                }
-            });
-            return stockMap;
-        }
-
-        function checkLowStockAlerts() {
-            const stocks = calculateCurrentStocks();
-            let lowItems = [];
-            window.appState.items.forEach(item => {
-                if((stocks[item.id] || 0) < item.minStock) {
-                    lowItems.push(item.name);
-                }
-            });
-            const banner = el('low-stock-banner');
-            if(lowItems.length > 0) {
-                banner.classList.remove('hidden');
-                el('low-stock-text').textContent = `Barang menipis: ${lowItems.join(', ')}. Email notifikasi otomatis terkirim ke semua pengguna terdaftar.`;
-            } else {
-                banner.classList.add('hidden');
-            }
-        }
-
-        window.toggleAccordion = (id) => {
-            const content = el(id);
-            const icon = el('icon-' + id);
-            if(content.classList.contains('open')) { content.classList.remove('open'); icon.style.transform = 'rotate(0deg)'; }
-            else { content.classList.add('open'); icon.style.transform = 'rotate(180deg)'; }
-        };
-
-        function processDashboardData() {
-            if(window.appState.items.length === 0) return;
-            const ds = window.appState.dateStart, de = window.appState.dateEnd;
-            const filteredMutations = window.appState.mutations.filter(m => m.date >= ds && m.date <= de);
-            const realStocks = calculateCurrentStocks();
-
-            renderCategoryList('Food', realStocks);
-            renderCategoryList('Beverage', realStocks);
-            renderCategoryList('Other', realStocks);
-
-            let rangeValue = 0, rangeItemsCount = 0;
-            let actualValuePie = { Food: 0, Beverage: 0, Other: 0 };
-            let expenseValuePie = { Food: 0, Beverage: 0, Other: 0 };
-            let inCount = {}, outCount = {};
-
-            window.appState.items.forEach(item => {
-                const stock = realStocks[item.id] || 0;
-                rangeValue += (stock * item.price);
-                rangeItemsCount++;
-                if(actualValuePie[item.category] !== undefined) actualValuePie[item.category] += (stock * item.price);
-            });
-
-            filteredMutations.forEach(m => {
-                const item = window.appState.items.find(i => i.id === m.itemId);
-                if(item) {
-                    if(m.type === 'in') inCount[item.name] = (inCount[item.name] || 0) + m.qty;
-                    else {
-                        outCount[item.name] = (outCount[item.name] || 0) + m.qty;
-                        if(expenseValuePie[item.category] !== undefined) expenseValuePie[item.category] += (m.qty * item.price);
-                    }
-                }
-            });
-
-            el('dash-total-value').textContent = formatRp(rangeValue);
-            el('dash-total-items').textContent = `${rangeItemsCount} Jenis Barang`;
-            const topIn = Object.keys(inCount).sort((a,b) => inCount[b] - inCount[a])[0];
-            const topOut = Object.keys(outCount).sort((a,b) => outCount[b] - outCount[a])[0];
-            el('dash-trend-in').innerHTML = topIn ? `${topIn} (${inCount[topIn]})` : '-';
-            el('dash-trend-out').innerHTML = topOut ? `${topOut} (${outCount[topOut]})` : '-';
-
-            buildTrendChart(filteredMutations);
-            buildPieCharts(actualValuePie, expenseValuePie);
-        }
-
-        function renderCategoryList(cat, stocks) {
-            const listEl = el(`list-${cat.toLowerCase()}`);
-            let itemsHTML = '', count = 0;
-            window.appState.items.filter(i => i.category === cat).forEach(item => {
-                count++;
-                const stock = stocks[item.id] || 0;
-                const isLow = stock < item.minStock;
-                itemsHTML += `
-                    <div class="flex items-center justify-between p-3 rounded-lg border ${isLow ? 'bg-red-50 border-red-200 pulse-alert' : 'bg-white border-slate-100'} shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <img src="${item.imageUrl || 'https://placehold.co/100x100/e2e8f0/64748b?text=Img'}" class="w-10 h-10 rounded object-cover border">
-                            <div>
-                                <div class="text-sm font-bold text-slate-800">${item.name}</div>
-                                <div class="text-xs text-slate-500">Min: ${item.minStock} | ${formatRp(item.price)}</div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-lg ${isLow ? 'text-red-600 font-bold' : 'text-slate-800'}">${stock}</div>
-                            ${isLow ? '<div class="text-[10px] text-red-500 uppercase font-bold">Low Stock</div>' : ''}
-                        </div>
-                    </div>`;
-            });
-            if(count === 0) itemsHTML = '<div class="text-center text-sm text-slate-400 py-2">Belum ada barang</div>';
-            listEl.innerHTML = itemsHTML;
-            el(`dash-${cat.toLowerCase()}-count`).textContent = `${count} Items`;
-        }
-
-        function buildTrendChart(mutations) {
-            const ctx = el('trendChart'); if(!ctx) return;
-            let dataByDate = {};
-            let currD = new Date(window.appState.dateStart), endD = new Date(window.appState.dateEnd);
-            while(currD <= endD) {
-                dataByDate[formatDate(currD)] = { in: 0, out: 0, day: currD.getDate() };
-                currD.setDate(currD.getDate() + 1);
-            }
-            mutations.forEach(m => {
-                if(dataByDate[m.date]) {
-                    if(m.type === 'in') dataByDate[m.date].in += m.qty;
-                    if(m.type === 'out') dataByDate[m.date].out += m.qty;
-                }
-            });
-            const labels = Object.keys(dataByDate).sort().map(k => dataByDate[k].day);
-            const dataIn = Object.keys(dataByDate).sort().map(k => dataByDate[k].in);
-            const dataOut = Object.keys(dataByDate).sort().map(k => dataByDate[k].out);
-
-            if(window.appState.charts.trend) window.appState.charts.trend.destroy();
-            window.appState.charts.trend = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'Masuk', data: dataIn, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.3 },
-                        { label: 'Keluar', data: dataOut, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.3 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        function buildPieCharts(actualPie, expPie) {
-            const ctx1 = el('stockPieChart'), ctx2 = el('expensePieChart');
-            if(!ctx1 || !ctx2) return;
-            const labels = ['Food', 'Beverage', 'Other'], colors = ['#f97316', '#3b82f6', '#a855f7'];
-
-            if(window.appState.charts.pieStock) window.appState.charts.pieStock.destroy();
-            window.appState.charts.pieStock = new Chart(ctx1, {
-                type: 'doughnut',
-                data: { labels, datasets: [{ data: [actualPie.Food, actualPie.Beverage, actualPie.Other], backgroundColor: colors }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            if(window.appState.charts.pieExp) window.appState.charts.pieExp.destroy();
-            window.appState.charts.pieExp = new Chart(ctx2, {
-                type: 'pie',
-                data: { labels, datasets: [{ data: [expPie.Food, expPie.Beverage, expPie.Other], backgroundColor: colors }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        function renderReports() {
-            const ds = window.appState.dateStart, de = window.appState.dateEnd;
-            const filtered = window.appState.mutations.filter(m => m.date >= ds && m.date <= de).sort((a,b) => new Date(b.date) - new Date(a.date));
-            const tbody = el('table-reports'); tbody.innerHTML = '';
-            filtered.forEach(m => {
-                const item = window.appState.items.find(i => i.id === m.itemId);
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-4 py-3">${m.date}</td>
-                        <td class="px-4 py-3"><span class="bg-slate-100 px-2 py-1 rounded text-xs">${item ? item.category : '-'}</span></td>
-                        <td class="px-4 py-3 font-medium">${item ? item.name : '-'}</td>
-                        <td class="px-4 py-3"><span class="px-2 py-1 rounded text-xs font-bold ${m.type === 'in' ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'}">${m.type === 'in' ? 'Masuk' : 'Keluar'}</span></td>
-                        <td class="px-4 py-3 font-bold">${m.qty}</td>
-                        <td class="px-4 py-3 text-xs text-slate-500">${m.note || '-'}</td>
-                        <td class="px-4 py-3 text-xs text-slate-500">${m.userId}</td>
-                    </tr>`;
-            });
-            if(filtered.length === 0) tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-slate-400">Tidak ada data</td></tr>';
-        }
-
-        window.exportExcel = () => {
-            const wb = XLSX.utils.table_to_book(el('report-table'), {sheet: "Mutasi"});
-            XLSX.writeFile(wb, `Mutasi_${window.appState.dateStart}.xlsx`);
-        };
-
-        window.exportPDF = () => {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.text("Laporan Mutasi Halimun Golf", 14, 20);
-            doc.autoTable({ html: '#report-table', startY: 25 });
-            doc.save(`Laporan_${window.appState.dateStart}.pdf`);
-        };
-
-        function renderUsers() {
-            const tbody = el('table-users'); tbody.innerHTML = '';
-            window.appState.allUsers.forEach(u => {
-                let actions = u.id !== window.appState.user.email ? `<button onclick="updateUserStatus('${u.id}', 'approved')" class="text-xs bg-emerald-500 text-white px-2 py-1 rounded">Setujui</button>` : 'Master';
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-4 py-3">${u.email}</td>
-                        <td class="px-4 py-3 uppercase text-xs font-bold">${u.role}</td>
-                        <td class="px-4 py-3"><span class="px-2 py-1 rounded text-xs ${u.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'}">${u.status}</span></td>
-                        <td class="px-4 py-3">${actions}</td>
-                    </tr>`;
-            });
-        }
-
-        window.updateUserStatus = async (email, status) => {
-            await db.collection('users').doc(email).update({ status });
-            showToast("Status user diupdate");
-        };
-
-        window.openAiModal = () => el('ai-modal').classList.remove('hidden');
-        window.closeAiModal = () => el('ai-modal').classList.add('hidden');
-
-        window.sendAiQuery = async () => {
-            const input = el('ai-input'), query = input.value.trim();
-            if(!query) return;
-            const container = el('ai-chat-container');
-            container.innerHTML += `<div class="flex justify-end"><div class="bg-emerald-600 text-white p-3 rounded-xl max-w-[80%]">${query}</div></div>`;
-            input.value = '';
-            
-            try {
-                const stocks = calculateCurrentStocks();
-                let summary = window.appState.items.map(i => `- ${i.name}: ${stocks[i.id] || 0} unit`).join('\n');
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-                const res = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: query }] }],
-                        systemInstruction: { parts: [{ text: "Anda AI inventory Halimun Golf. Data stok:\n" + summary }] }
-                    })
-                });
-                const data = await res.json();
-                const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, tidak dapat memproses.";
-                container.innerHTML += `<div class="flex justify-start"><div class="bg-white border p-3 rounded-xl max-w-[80%]">${reply}</div></div>`;
-            } catch(e) {
-                container.innerHTML += `<div class="flex justify-start"><div class="bg-red-50 text-red-600 p-3 rounded-xl">Error AI</div></div>`;
-            }
-            container.scrollTop = container.scrollHeight;
-        };
     </script>
 </body>
 </html>
